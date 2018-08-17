@@ -332,6 +332,11 @@ def oob_classifier_accuracy(rf, X_train, y_train):
     predicted_classes = [rf.classes_[i] for i in predicted_class_indexes]
 
     oob_score = np.mean(y == predicted_classes)
+    
+    from sklearn.metrics import f1_score
+    
+    oob_score = f1_score(y, predicted_classes)
+    
     return oob_score
 
 
