@@ -16,7 +16,7 @@ from sklearn.ensemble.forest import _generate_unsampled_indices
 from sklearn.ensemble import forest
 from sklearn.model_selection import cross_val_score
 from sklearn.base import clone
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, accuracy_score, f1_score
 from scipy.stats import spearmanr
 from pandas.api.types import is_numeric_dtype
 from matplotlib.colors import ListedColormap
@@ -156,7 +156,8 @@ def sample_rows(X, n_samples):
     return X
 
 
-def oob_importances(rf, X_train, y_train, n_samples=5000):
+
+def oob_importances(rf, X_train, y_train, n_samples=5000, metric = accuracy_score):
     """
     Compute permutation feature importances for scikit-learn
     RandomForestClassifier or RandomForestRegressor in arg rf.
@@ -178,8 +179,11 @@ def oob_importances(rf, X_train, y_train, n_samples=5000):
     rf.fit(X_train, y_train)
     imp = oob_importances(rf, X_train, y_train)
     """
+    from functools import partial
+    oob_classifier_measure = partial(oob_classifier_accuracy, metric = metric)
+    
     if isinstance(rf, RandomForestClassifier):
-        return permutation_importances(rf, X_train, y_train, oob_classifier_accuracy, n_samples)
+        return permutation_importances(rf, X_train, y_train, oob_classifier_measure, n_samples)
     elif isinstance(rf, RandomForestRegressor):
         return permutation_importances(rf, X_train, y_train, oob_regression_r2_score, n_samples)
     return None
@@ -309,7 +313,7 @@ def permutation_importances_raw(rf, X_train, y_train, metric, n_samples=5000):
     return np.array(imp)
 
 
-def oob_classifier_accuracy(rf, X_train, y_train):
+def oob_classifier_accuracy(rf, X_train, y_train, metric = accuracy_score):
     """
     Compute out-of-bag (OOB) accuracy for a scikit-learn random forest
     classifier. We learned the guts of scikit's RF from the BSD licensed
@@ -331,11 +335,11 @@ def oob_classifier_accuracy(rf, X_train, y_train):
     predicted_class_indexes = np.argmax(predictions, axis=1)
     predicted_classes = [rf.classes_[i] for i in predicted_class_indexes]
 
-    oob_score = np.mean(y == predicted_classes)
+    #oob_score = np.mean(y == predicted_classes)
     
-    from sklearn.metrics import f1_score
+
     
-    oob_score = f1_score(y, predicted_classes)
+    oob_score = metric(y, predicted_classes)
     
     return oob_score
 
